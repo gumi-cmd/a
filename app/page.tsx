@@ -116,43 +116,40 @@ function calculate(settlement: Settlement | null) {
   };
 }
 
-function downloadPng(settlement: Settlement, rows: ResultRow[], totals: ReturnType<typeof calculate>) {
+function downloadPng(settlement: Settlement, rows: ResultRow[]) {
   const canvas = document.createElement("canvas");
-  const width = 1680;
-  const margin = 70;
-  const titleHeight = 150;
-  const rowHeight = 72;
-  const summaryHeight = 155;
-  const height = margin * 2 + titleHeight + rowHeight * (rows.length + 1) + summaryHeight;
-  const scale = 2;
-  canvas.width = width * scale;
-  canvas.height = height * scale;
+  // A4 landscape at 300dpi. Keeping the lower area open gives a comfortable print margin.
+  const width = 3508;
+  const height = 2480;
+  const margin = 120;
+  const titleHeight = 300;
+  const rowHeight = 170;
+  canvas.width = width;
+  canvas.height = height;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  ctx.scale(scale, scale);
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
   ctx.fillStyle = "#111111";
   ctx.textAlign = "center";
-  ctx.font = "700 48px Arial, sans-serif";
-  ctx.fillText(`${settlement.year}년 ${settlement.month}월 관리비 정산`, width / 2, margin + 52);
-  ctx.font = "600 25px Arial, sans-serif";
-  ctx.fillText(`${lineName(settlement.line)} · ${rows.length}세대`, width / 2, margin + 100);
+  ctx.font = "900 94px Arial, sans-serif";
+  ctx.fillText(`${settlement.year}년 ${settlement.month}월 관리비 정산`, width / 2, margin + 105);
+  ctx.font = "800 48px Arial, sans-serif";
+  ctx.fillText(`${lineName(settlement.line)}`, width / 2, margin + 190);
 
   const headers = ["호수", "수도계량", "사용량", "수도요금", "주차비", "관리비", "합계"];
-  const columnWidths = [170, 220, 180, 240, 220, 220, 290];
+  const columnWidths = [330, 440, 400, 500, 450, 450, 578];
   const tableX = margin;
   const tableY = margin + titleHeight;
-  const tableWidth = columnWidths.reduce((sum, value) => sum + value, 0);
 
   const drawCell = (x: number, y: number, w: number, h: number, text: string, bold = false) => {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = "#111111";
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 8;
     ctx.strokeRect(x, y, w, h);
-    ctx.fillStyle = "#111111";
-    ctx.font = `${bold ? 700 : 500} 23px Arial, sans-serif`;
+    ctx.fillStyle = "#000000";
+    ctx.font = `${bold ? 900 : 700} 50px Arial, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(text, x + w / 2, y + h / 2);
@@ -179,17 +176,6 @@ function downloadPng(settlement: Settlement, rows: ResultRow[], totals: ReturnTy
       x += columnWidths[columnIndex];
     });
   });
-
-  const summaryY = tableY + rowHeight * (rows.length + 1) + 45;
-  ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
-  ctx.font = "700 27px Arial, sans-serif";
-  ctx.fillText(`총 수도 사용량  ${money(totals.totalUsage)}톤`, margin, summaryY);
-  ctx.fillText(`총 수도요금  ${money(totals.allocatedWater)}원`, margin + 470, summaryY);
-  ctx.fillText(`전체 관리비  ${money(numberValue(settlement.managementFee) * rows.length)}원`, margin + 900, summaryY);
-  ctx.font = "800 34px Arial, sans-serif";
-  ctx.textAlign = "right";
-  ctx.fillText(`전체 정산 합계  ${money(totals.grandTotal)}원`, tableX + tableWidth, summaryY + 65);
 
   const link = document.createElement("a");
   link.download = `${settlement.year}-${String(settlement.month).padStart(2, "0")}-${settlement.line}-관리비정산.png`;
@@ -360,15 +346,17 @@ export default function Home() {
 
       {step !== "home" && step !== "history" && data && (
         <section className="workspace">
-          <div className="context">
-            <div><span className="eyebrow">{lineName(data.line)}</span><h1>{data.year}년 {data.month}월 관리비 정산</h1></div>
-            <div className="steps">
-              {["수도 입력", "비용 입력", "정산 결과"].map((label, index) => {
-                const active = ["water", "fees", "result"].indexOf(step);
-                return <span key={label} className={index <= active ? "active" : ""}><i>{index + 1}</i>{label}</span>;
-              })}
+          {step !== "result" && (
+            <div className="context">
+              <div><span className="eyebrow">{lineName(data.line)}</span><h1>{data.year}년 {data.month}월 관리비 정산</h1></div>
+              <div className="steps">
+                {["수도 입력", "비용 입력", "정산 결과"].map((label, index) => {
+                  const active = ["water", "fees", "result"].indexOf(step);
+                  return <span key={label} className={index <= active ? "active" : ""}><i>{index + 1}</i>{label}</span>;
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {step === "water" && (
             <>
@@ -416,17 +404,11 @@ export default function Home() {
               <div className="resultTitle"><h2>{data.year}년 {data.month}월 관리비 정산</h2><p>{lineName(data.line)} · {LINES[data.line].length}세대</p></div>
               <div className="resultActions">
                 <button className="ghost" onClick={openHistory}>정산 기록 보기</button>
-                <button className="primary" onClick={() => downloadPng(data, calculations.rows, calculations)}>결과표 PNG 저장</button>
+                <button className="primary" onClick={() => downloadPng(data, calculations.rows)}>A4 결과표 PNG 저장</button>
               </div>
               <div className="tableCard resultTable"><table><thead><tr><th>호수</th><th>수도계량</th><th>사용량</th><th>수도요금</th><th>주차비</th><th>관리비</th><th>합계</th></tr></thead>
                 <tbody>{calculations.rows.map((row) => <tr key={row.unit}><th>{row.unit}호</th><td>{money(numberValue(row.entry.current))}</td><td>{money(row.usage)}톤</td><td>{money(row.water)}원</td><td>{money(row.parking)}원</td><td>{money(row.management)}원</td><td><b>{money(row.total)}원</b></td></tr>)}</tbody>
               </table></div>
-              <div className="summary">
-                <div><span>총 수도 사용량</span><strong>{money(calculations.totalUsage)}톤</strong></div>
-                <div><span>총 수도요금</span><strong>{money(calculations.allocatedWater)}원</strong></div>
-                <div><span>전체 관리비</span><strong>{money(numberValue(data.managementFee) * LINES[data.line].length)}원</strong></div>
-                <div className="grand"><span>전체 정산 합계</span><strong>{money(calculations.grandTotal)}원</strong></div>
-              </div>
               <div className="nav"><button className="ghost" onClick={() => setStep("fees")}>← 수정하기</button><button className="primary" onClick={goHome}>메인으로</button></div>
             </>
           )}
