@@ -138,29 +138,9 @@ function downloadPng(settlement: Settlement, rows: ResultRow[]) {
   ctx.font = "900 64px Arial, sans-serif";
   ctx.fillText(`${lineName(settlement.line)}`, width / 2, 242);
 
-  const headers = ["호수", "수도계량", "사용량(톤)", "수도요금(원)", "주차비(원)", "관리비(원)", "합계(원)"];
+  const headers = ["호수", "수도계량", "사용량", "수도요금", "주차비", "관리비", "합계"];
   const columnWidths = [270, 356, 306, 376, 336, 336, 420];
   const tableX = margin;
-
-  const splitLongValue = (text: string) => {
-    const parts = text.split(",");
-    if (parts.length > 1) {
-      let best = 1;
-      let smallestDifference = Number.POSITIVE_INFINITY;
-      for (let index = 1; index < parts.length; index += 1) {
-        const first = parts.slice(0, index).join(",");
-        const second = parts.slice(index).join(",");
-        const difference = Math.abs(first.length - second.length);
-        if (difference < smallestDifference) {
-          best = index;
-          smallestDifference = difference;
-        }
-      }
-      return [parts.slice(0, best).join(","), parts.slice(best).join(",")];
-    }
-    const middle = Math.ceil(text.length / 2);
-    return [text.slice(0, middle), text.slice(middle)];
-  };
 
   const drawCell = (x: number, y: number, w: number, h: number, text: string, header = false) => {
     ctx.fillStyle = "#ffffff";
@@ -171,34 +151,14 @@ function downloadPng(settlement: Settlement, rows: ResultRow[]) {
     ctx.fillStyle = "#000000";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    if (header) {
-      let headerSize = 50;
-      ctx.font = `900 ${headerSize}px Arial, sans-serif`;
-      while (ctx.measureText(text).width > w - 26 && headerSize > 34) {
-        headerSize -= 2;
-        ctx.font = `900 ${headerSize}px Arial, sans-serif`;
-      }
-      ctx.fillText(text, x + w / 2, y + h / 2);
-      return;
+    let fontSize = 96;
+    const minimumSize = header ? 62 : 52;
+    ctx.font = `900 ${fontSize}px Arial, sans-serif`;
+    while (ctx.measureText(text).width > w - 30 && fontSize > minimumSize) {
+      fontSize -= 2;
+      ctx.font = `900 ${fontSize}px Arial, sans-serif`;
     }
-
-    const regularSize = 96;
-    ctx.font = `900 ${regularSize}px Arial, sans-serif`;
-    if (ctx.measureText(text).width <= w - 30) {
-      ctx.fillText(text, x + w / 2, y + h / 2);
-      return;
-    }
-
-    const lines = splitLongValue(text);
-    let wrappedSize = 86;
-    ctx.font = `900 ${wrappedSize}px Arial, sans-serif`;
-    while (lines.some((line) => ctx.measureText(line).width > w - 30) && wrappedSize > 52) {
-      wrappedSize -= 2;
-      ctx.font = `900 ${wrappedSize}px Arial, sans-serif`;
-    }
-    const lineGap = wrappedSize * 1.08;
-    ctx.fillText(lines[0], x + w / 2, y + h / 2 - lineGap / 2);
-    ctx.fillText(lines[1], x + w / 2, y + h / 2 + lineGap / 2);
+    ctx.fillText(text, x + w / 2, y + h / 2);
   };
 
   let x = tableX;
