@@ -118,12 +118,12 @@ function calculate(settlement: Settlement | null) {
 
 function downloadPng(settlement: Settlement, rows: ResultRow[]) {
   const canvas = document.createElement("canvas");
-  // A4 landscape at 300dpi. Keeping the lower area open gives a comfortable print margin.
-  const width = 3508;
-  const height = 2480;
+  // A4 portrait at 300dpi, laid out like a vertically-read paper document.
+  const width = 2480;
+  const height = 3508;
   const margin = 120;
-  const titleHeight = 300;
-  const rowHeight = 170;
+  const titleHeight = 360;
+  const rowHeight = 255;
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
@@ -132,13 +132,13 @@ function downloadPng(settlement: Settlement, rows: ResultRow[]) {
   ctx.fillRect(0, 0, width, height);
   ctx.fillStyle = "#111111";
   ctx.textAlign = "center";
-  ctx.font = "900 94px Arial, sans-serif";
-  ctx.fillText(`${settlement.year}년 ${settlement.month}월 관리비 정산`, width / 2, margin + 105);
-  ctx.font = "800 48px Arial, sans-serif";
-  ctx.fillText(`${lineName(settlement.line)}`, width / 2, margin + 190);
+  ctx.font = "900 84px Arial, sans-serif";
+  ctx.fillText(`${settlement.year}년 ${settlement.month}월 관리비 정산`, width / 2, margin + 110);
+  ctx.font = "800 46px Arial, sans-serif";
+  ctx.fillText(`${lineName(settlement.line)}`, width / 2, margin + 205);
 
   const headers = ["호수", "수도계량", "사용량", "수도요금", "주차비", "관리비", "합계"];
-  const columnWidths = [330, 440, 400, 500, 450, 450, 578];
+  const columnWidths = [240, 330, 300, 350, 320, 320, 380];
   const tableX = margin;
   const tableY = margin + titleHeight;
 
@@ -149,7 +149,12 @@ function downloadPng(settlement: Settlement, rows: ResultRow[]) {
     ctx.lineWidth = 8;
     ctx.strokeRect(x, y, w, h);
     ctx.fillStyle = "#000000";
-    ctx.font = `${bold ? 900 : 700} 50px Arial, sans-serif`;
+    let fontSize = bold ? 43 : 40;
+    ctx.font = `${bold ? 900 : 750} ${fontSize}px Arial, sans-serif`;
+    while (ctx.measureText(text).width > w - 28 && fontSize > 28) {
+      fontSize -= 2;
+      ctx.font = `${bold ? 900 : 750} ${fontSize}px Arial, sans-serif`;
+    }
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(text, x + w / 2, y + h / 2);
