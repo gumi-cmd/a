@@ -121,9 +121,10 @@ function downloadPng(settlement: Settlement, rows: ResultRow[]) {
   // A4 portrait at 300dpi, laid out like a vertically-read paper document.
   const width = 2480;
   const height = 3508;
-  const margin = 120;
-  const titleHeight = 360;
-  const rowHeight = 255;
+  const margin = 40;
+  const tableY = 340;
+  const headerHeight = 216;
+  const rowHeight = 312;
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
@@ -132,52 +133,92 @@ function downloadPng(settlement: Settlement, rows: ResultRow[]) {
   ctx.fillRect(0, 0, width, height);
   ctx.fillStyle = "#111111";
   ctx.textAlign = "center";
-  ctx.font = "900 84px Arial, sans-serif";
-  ctx.fillText(`${settlement.year}년 ${settlement.month}월 관리비 정산`, width / 2, margin + 110);
-  ctx.font = "800 46px Arial, sans-serif";
-  ctx.fillText(`${lineName(settlement.line)}`, width / 2, margin + 205);
+  ctx.font = "900 114px Arial, sans-serif";
+  ctx.fillText(`${settlement.year}년 ${settlement.month}월 관리비 정산`, width / 2, 130);
+  ctx.font = "900 64px Arial, sans-serif";
+  ctx.fillText(`${lineName(settlement.line)}`, width / 2, 242);
 
-  const headers = ["호수", "수도계량", "사용량", "수도요금", "주차비", "관리비", "합계"];
-  const columnWidths = [240, 330, 300, 350, 320, 320, 380];
+  const headers = ["호수", "수도계량", "사용량(톤)", "수도요금(원)", "주차비(원)", "관리비(원)", "합계(원)"];
+  const columnWidths = [270, 356, 306, 376, 336, 336, 420];
   const tableX = margin;
-  const tableY = margin + titleHeight;
 
-  const drawCell = (x: number, y: number, w: number, h: number, text: string, bold = false) => {
+  const splitLongValue = (text: string) => {
+    const parts = text.split(",");
+    if (parts.length > 1) {
+      let best = 1;
+      let smallestDifference = Number.POSITIVE_INFINITY;
+      for (let index = 1; index < parts.length; index += 1) {
+        const first = parts.slice(0, index).join(",");
+        const second = parts.slice(index).join(",");
+        const difference = Math.abs(first.length - second.length);
+        if (difference < smallestDifference) {
+          best = index;
+          smallestDifference = difference;
+        }
+      }
+      return [parts.slice(0, best).join(","), parts.slice(best).join(",")];
+    }
+    const middle = Math.ceil(text.length / 2);
+    return [text.slice(0, middle), text.slice(middle)];
+  };
+
+  const drawCell = (x: number, y: number, w: number, h: number, text: string, header = false) => {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(x, y, w, h);
     ctx.strokeStyle = "#000000";
-    ctx.lineWidth = 8;
+    ctx.lineWidth = 10;
     ctx.strokeRect(x, y, w, h);
     ctx.fillStyle = "#000000";
-    let fontSize = bold ? 43 : 40;
-    ctx.font = `${bold ? 900 : 750} ${fontSize}px Arial, sans-serif`;
-    while (ctx.measureText(text).width > w - 28 && fontSize > 28) {
-      fontSize -= 2;
-      ctx.font = `${bold ? 900 : 750} ${fontSize}px Arial, sans-serif`;
-    }
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(text, x + w / 2, y + h / 2);
+    if (header) {
+      let headerSize = 50;
+      ctx.font = `900 ${headerSize}px Arial, sans-serif`;
+      while (ctx.measureText(text).width > w - 26 && headerSize > 34) {
+        headerSize -= 2;
+        ctx.font = `900 ${headerSize}px Arial, sans-serif`;
+      }
+      ctx.fillText(text, x + w / 2, y + h / 2);
+      return;
+    }
+
+    const regularSize = 96;
+    ctx.font = `900 ${regularSize}px Arial, sans-serif`;
+    if (ctx.measureText(text).width <= w - 30) {
+      ctx.fillText(text, x + w / 2, y + h / 2);
+      return;
+    }
+
+    const lines = splitLongValue(text);
+    let wrappedSize = 86;
+    ctx.font = `900 ${wrappedSize}px Arial, sans-serif`;
+    while (lines.some((line) => ctx.measureText(line).width > w - 30) && wrappedSize > 52) {
+      wrappedSize -= 2;
+      ctx.font = `900 ${wrappedSize}px Arial, sans-serif`;
+    }
+    const lineGap = wrappedSize * 1.08;
+    ctx.fillText(lines[0], x + w / 2, y + h / 2 - lineGap / 2);
+    ctx.fillText(lines[1], x + w / 2, y + h / 2 + lineGap / 2);
   };
 
   let x = tableX;
   headers.forEach((header, index) => {
-    drawCell(x, tableY, columnWidths[index], rowHeight, header, true);
+    drawCell(x, tableY, columnWidths[index], headerHeight, header, true);
     x += columnWidths[index];
   });
   rows.forEach((row, rowIndex) => {
     const values = [
       `${row.unit}호`,
       money(numberValue(row.entry.current)),
-      `${money(row.usage)}톤`,
-      `${money(row.water)}원`,
-      `${money(row.parking)}원`,
-      `${money(row.management)}원`,
-      `${money(row.total)}원`,
+      money(row.usage),
+      money(row.water),
+      money(row.parking),
+      money(row.management),
+      money(row.total),
     ];
     x = tableX;
     values.forEach((value, columnIndex) => {
-      drawCell(x, tableY + rowHeight * (rowIndex + 1), columnWidths[columnIndex], rowHeight, value, columnIndex === 0 || columnIndex === 6);
+      drawCell(x, tableY + headerHeight + rowHeight * rowIndex, columnWidths[columnIndex], rowHeight, value);
       x += columnWidths[columnIndex];
     });
   });
