@@ -138,8 +138,8 @@ function downloadPng(settlement: Settlement, rows: ResultRow[]) {
   ctx.font = "900 64px Arial, sans-serif";
   ctx.fillText(`${lineName(settlement.line)}`, width / 2, 242);
 
-  const headers = ["호수", "수도계량", "사용량", "수도요금", "주차비", "관리비", "합계"];
-  const columnWidths = [270, 356, 306, 376, 336, 336, 420];
+  const headers = ["호수", "수도계량", "사용량", "수도요금", "주차비", "관리비", "합계", "비고"];
+  const columnWidths = [230, 330, 270, 350, 300, 300, 380, 240];
   const tableX = margin;
 
   const drawCell = (x: number, y: number, w: number, h: number, text: string, header = false) => {
@@ -151,7 +151,7 @@ function downloadPng(settlement: Settlement, rows: ResultRow[]) {
     ctx.fillStyle = "#000000";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    let fontSize = 96;
+    let fontSize = 84;
     const minimumSize = header ? 62 : 52;
     ctx.font = `900 ${fontSize}px Arial, sans-serif`;
     while (ctx.measureText(text).width > w - 30 && fontSize > minimumSize) {
@@ -175,6 +175,7 @@ function downloadPng(settlement: Settlement, rows: ResultRow[]) {
       money(row.parking),
       money(row.management),
       money(row.total),
+      "",
     ];
     x = tableX;
     values.forEach((value, columnIndex) => {
@@ -182,6 +183,27 @@ function downloadPng(settlement: Settlement, rows: ResultRow[]) {
       x += columnWidths[columnIndex];
     });
   });
+
+  const totalWaterBill = numberValue(settlement.totalWaterBill);
+  const totalUsage = rows.reduce((sum, row) => sum + row.usage, 0);
+  const unitPrice = totalUsage > 0 ? totalWaterBill / totalUsage : 0;
+  const drawFooterLine = (text: string, y: number) => {
+    let fontSize = 84;
+    ctx.font = `900 ${fontSize}px Arial, sans-serif`;
+    while (ctx.measureText(text).width > width - margin * 2 && fontSize > 52) {
+      fontSize -= 2;
+      ctx.font = `900 ${fontSize}px Arial, sans-serif`;
+    }
+    ctx.fillStyle = "#000000";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, width / 2, y);
+  };
+  drawFooterLine(
+    `${settlement.month}월 수도요금 ${money(totalWaterBill)}원 ÷ ${money(totalUsage)}톤 = ${money(unitPrice)}원`,
+    3210,
+  );
+  drawFooterLine("새마을금고 9002205515741 최영옥", 3340);
 
   const link = document.createElement("a");
   link.download = `${settlement.year}-${String(settlement.month).padStart(2, "0")}-${settlement.line}-관리비정산.png`;
