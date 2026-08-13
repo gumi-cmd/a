@@ -285,8 +285,10 @@ td input { max-width: 190px; padding: 10px 12px; text-align: right; }
 .monthFiles { min-width: 0; }
 .pathBar { padding: 15px 20px; border-bottom: 2px solid #222; background: #fafafa; font-size: 16px; font-weight: 700; }
 .fileGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding: 24px; }
-.recordFile { border: 2px solid #999; border-radius: 5px; background: white; padding: 14px; text-align: left; }
+.recordFile { position: relative; border: 2px solid #999; border-radius: 5px; background: white; padding: 14px; text-align: left; }
 .recordFile:hover { border-color: var(--green); }
+.recordFile.recentRecord { border-color: var(--green); background: #e8f5eb; box-shadow: 0 0 0 2px rgba(36, 117, 66, .16); }
+.recentBadge { position: absolute; z-index: 1; top: 22px; right: 22px; border-radius: 999px; background: var(--green); padding: 5px 9px; color: white; font-size: 13px; font-weight: 900; }
 .recordOpen { display: block; width: 100%; border: 0; padding: 0; background: transparent; color: inherit; text-align: left; }
 .filePreview { height: 120px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 12px; border: 2px solid #222; background: white; margin-bottom: 13px; }
 .filePreview i { border: 1px solid #222; }

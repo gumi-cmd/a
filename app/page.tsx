@@ -41,6 +41,7 @@ const LINE_KEYS: LineKey[] = ["12", "34"];
 const ALL_UNITS = LINE_KEYS.flatMap((line) => LINES[line]).sort((a, b) => Number(a) - Number(b));
 const STORAGE_KEY = "building-fee-settlements-v2";
 const LEGACY_STORAGE_KEY = "building-fee-settlements-v1";
+const RECENT_RECORD_KEY = "building-fee-recent-record-v1";
 
 const money = (value: number) => new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 }).format(Math.round(value));
 const numberValue = (value: string | undefined) => {
@@ -255,6 +256,7 @@ export default function Home() {
   const [history, setHistory] = useState<Record<string, Settlement>>({});
   const [historyYear, setHistoryYear] = useState<number | null>(null);
   const [recordEdit, setRecordEdit] = useState<RecordEdit | null>(null);
+  const [recentRecordKey, setRecentRecordKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (!data || step === "home" || step === "history") return;
@@ -294,9 +296,14 @@ export default function Home() {
   const openHistory = () => {
     const all = readAll();
     setHistory(all);
+    setRecentRecordKey(localStorage.getItem(RECENT_RECORD_KEY));
     const years = Array.from(new Set(Object.values(all).filter((item) => item.completed).map((item) => item.year))).sort((a, b) => b - a);
     setHistoryYear(years[0] || null);
     setStep("history");
+  };
+  const markRecentRecord = (key: string) => {
+    localStorage.setItem(RECENT_RECORD_KEY, key);
+    setRecentRecordKey(key);
   };
   const finish = () => { setData((current) => current ? { ...current, completed: true } : current); setStep("result"); };
   const openWaterRate = () => {
@@ -324,6 +331,7 @@ export default function Home() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
     setHistory(all);
     setHistoryYear(updated.year);
+    markRecentRecord(nextKey);
     setRecordEdit(null);
   };
   const deleteRecord = (key: string, record: Settlement) => {
@@ -331,6 +339,10 @@ export default function Home() {
     const all = readAll();
     delete all[key];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+    if (recentRecordKey === key) {
+      localStorage.removeItem(RECENT_RECORD_KEY);
+      setRecentRecordKey(null);
+    }
     setHistory(all);
     const remainingYears = Array.from(new Set(Object.values(all).filter((item) => item.completed).map((item) => item.year))).sort((a, b) => b - a);
     if (!remainingYears.includes(historyYear ?? -1)) setHistoryYear(remainingYears[0] || null);
@@ -370,8 +382,9 @@ export default function Home() {
       <div className="historyHeading"><div><h1>정산 기록</h1><p>완료된 두 라인의 정산표를 월별로 함께 관리합니다.</p></div><button className="primary" onClick={goHome}>새 정산 만들기</button></div>
       {completedRecords.length === 0 ? <div className="emptyHistory"><b>저장된 정산 기록이 없습니다.</b><p>정산을 완료하면 이곳에 자동으로 표시됩니다.</p></div> : <div className="explorer">
         <aside className="yearFolders"><h2>연도</h2>{historyYears.map((item) => <button key={item} className={historyYear === item ? "selected" : ""} onClick={() => setHistoryYear(item)}><span>▰</span>{item}년</button>)}</aside>
-        <div className="monthFiles"><div className="pathBar">정산 기록 〉 {historyYear}년</div><div className="fileGrid">{visibleRecords.map(([key, record]) => <article key={key} className="recordFile">
-          <button className="recordOpen" onClick={() => { setData(record); setStep("result"); }} aria-label={`${record.year}년 ${record.month}월 정산표 열기`}><span className="filePreview"><i /><i /><i /><i /></span><span><b>{record.month}월 관리비 정산</b><small>1·2호 / 3·4호 라인 · 총 16세대</small></span></button>
+        <div className="monthFiles"><div className="pathBar">정산 기록 〉 {historyYear}년</div><div className="fileGrid">{visibleRecords.map(([key, record]) => <article key={key} className={`recordFile ${recentRecordKey === key ? "recentRecord" : ""}`}>
+          {recentRecordKey === key && <span className="recentBadge">최근 확인</span>}
+          <button className="recordOpen" onClick={() => { markRecentRecord(key); setData(record); setStep("result"); }} aria-label={`${record.year}년 ${record.month}월 정산표 열기`}><span className="filePreview"><i /><i /><i /><i /></span><span><b>{record.month}월 관리비 정산</b><small>1·2호 / 3·4호 라인 · 총 16세대</small></span></button>
           <div className="recordActions"><button onClick={() => setRecordEdit({ originalKey: key, year: record.year, month: record.month, record })}>연·월 수정</button><button className="deleteRecord" onClick={() => deleteRecord(key, record)}>삭제</button></div>
         </article>)}</div></div>
       </div>}
