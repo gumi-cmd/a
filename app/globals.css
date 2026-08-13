@@ -211,6 +211,7 @@ td input { max-width: 190px; padding: 10px 12px; text-align: right; }
 .combinedUsageCards strong { font-size: 24px; }
 .combinedUsageCards .combinedTotal { border-color: var(--green); background: #edf5f0; }
 .combinedUsageCards .combinedTotal strong { color: var(--green-dark); font-size: 28px; }
+.combinedBillInput { margin: 6px 0 38px; border-color: var(--green); }
 .parkingPicker { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .parkingPicker fieldset { min-width: 0; margin: 0; padding: 20px; border: 2px solid #222; border-radius: 7px; background: white; }
 .parkingPicker legend { padding: 0 8px; font-size: 21px; font-weight: 900; }
@@ -221,6 +222,9 @@ td input { max-width: 190px; padding: 10px 12px; text-align: right; }
 .unitChecks span { font-weight: 900; }
 .unitChecks small { margin-left: auto; color: var(--muted); font-size: 13px; }
 .selectionSummary { padding: 18px; border: 2px solid #222; border-radius: 6px; background: white; text-align: center; }
+.remarksTables { display: grid; gap: 34px; }
+.remarksTables h3 { font-size: 25px; margin: 0 0 12px; }
+.remarkInput { min-width: 150px; padding: 10px; font-size: 16px; }
 
 .resultTitle { text-align: center; margin: 8px 0 30px; }
 .resultTitle h2 { font-size: clamp(42px, 6vw, 62px); font-weight: 950; margin: 0 0 10px; color: #000; }
@@ -228,6 +232,15 @@ td input { max-width: 190px; padding: 10px 12px; text-align: right; }
 .lineResult { margin-top: 38px; }
 .lineResultHeading { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
 .lineResultHeading h3 { margin: 0; font-size: 29px; }
+.sheetCarousel { display: flex; gap: 24px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px max(12px, calc((100vw - 1180px) / 2)) 28px; margin-inline: calc(50% - 50vw); scrollbar-color: var(--green) #ddd; }
+.printSheet { flex: 0 0 min(1160px, calc(100vw - 44px)); scroll-snap-align: center; padding: 28px; border: 4px solid #000; background: white; }
+.sheetTitle { text-align: center; margin-bottom: 22px; }
+.sheetTitle h3 { margin: 0 0 8px; font-size: 36px; }
+.sheetTitle p { margin: 0; font-size: 22px; font-weight: 900; }
+.sheetFooter { display: grid; gap: 12px; padding: 24px 10px 4px; text-align: center; color: #000; }
+.sheetFooter b { font-size: 22px; }
+.sheetFooter strong { font-size: 22px; }
+.totalRow th, .totalRow td { background: #edf5f0; font-weight: 950; }
 .resultTable { overflow-x: auto; }
 .resultTable { border: 5px solid #000; }
 .resultTable table { min-width: 1100px; }
@@ -342,4 +355,6 @@ td input { max-width: 190px; padding: 10px 12px; text-align: right; }
   .unitChecks { grid-template-columns: 1fr; }
   .singleSettingCard { padding: 24px 20px; }
   .lineResultHeading { align-items: stretch; flex-direction: column; }
+  .printSheet { padding: 14px; }
+  .sheetTitle h3 { font-size: 28px; }
 }
