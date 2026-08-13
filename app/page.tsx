@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type LineKey = "12" | "34";
 type Step = "home" | "water" | "waterRate" | "parkingFee" | "parkingUnits" | "management" | "remarks" | "treasurer" | "result" | "history";
@@ -245,39 +245,6 @@ function SettlementSheet({ settlement, line, rows, treasurer = false }: { settle
   return <article className="printSheet"><div className="sheetTitle"><h3>{settlement.year}년 {settlement.month}월 관리비 정산</h3><p>{lineName(line)}</p></div><div className="tableCard resultTable"><table><thead><tr><th>호수</th><th>수도계량</th><th>사용량</th><th>수도요금</th><th>주차비</th><th>관리비</th><th>합계</th><th>비고</th></tr></thead><tbody>{rows.map((row) => <tr key={row.unit}><th>{row.unit}호</th><td>{money(numberValue(row.entry.current))}</td><td>{money(row.usage)}톤</td><td>{money(row.water)}원</td><td>{money(row.parking)}원</td><td>{money(row.management)}원</td><td><b>{money(row.total)}원</b></td><td>{settlement.remarks?.[row.unit] || ""}</td></tr>)}{treasurer && <tr className="totalRow"><th>합계</th><td>—</td><td>{money(rows.reduce((sum, row) => sum + row.usage, 0))}톤</td><td>{money(rows.reduce((sum, row) => sum + row.water, 0))}원</td><td>{money(rows.reduce((sum, row) => sum + row.parking, 0))}원</td><td>{money(rows.reduce((sum, row) => sum + row.management, 0))}원</td><td>{money(rows.reduce((sum, row) => sum + row.total, 0))}원</td><td /></tr>}</tbody></table></div><footer className="sheetFooter"><b>수도요금 {money(totalBill)}원 ÷ {money(combinedUsage)}톤 = {money(appliedRate)}원</b><strong>새마을금고 9002205515741 최영옥</strong></footer></article>;
 }
 
-function SheetCarousel({ children }: { children: ReactNode }) {
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const wheelLocked = useRef(false);
-  const snapTimer = useRef<number | null>(null);
-
-  const snapToPage = (page: number) => {
-    const carousel = carouselRef.current;
-    if (!carousel) return;
-    carousel.scrollTo({ left: Math.max(0, Math.min(1, page)) * carousel.clientWidth, behavior: "smooth" });
-  };
-
-  return <div
-    ref={carouselRef}
-    className="sheetCarousel"
-    onWheel={(event) => {
-      if (Math.abs(event.deltaX) <= Math.abs(event.deltaY) || wheelLocked.current) return;
-      event.preventDefault();
-      const carousel = event.currentTarget;
-      const currentPage = Math.round(carousel.scrollLeft / carousel.clientWidth);
-      wheelLocked.current = true;
-      snapToPage(currentPage + (event.deltaX > 0 ? 1 : -1));
-      window.setTimeout(() => { wheelLocked.current = false; }, 500);
-    }}
-    onScroll={() => {
-      if (snapTimer.current !== null) window.clearTimeout(snapTimer.current);
-      snapTimer.current = window.setTimeout(() => {
-        const carousel = carouselRef.current;
-        if (carousel) snapToPage(Math.round(carousel.scrollLeft / carousel.clientWidth));
-      }, 120);
-    }}
-  >{children}</div>;
-}
-
 export default function Home() {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -453,9 +420,9 @@ export default function Home() {
 
       {step === "remarks" && <><div className="sectionIntro"><div><span className="sectionNo">06</span><h2>비고 작성</h2></div><p>비고만 수정할 수 있으며 모든 출력물에 반영됩니다.</p></div><div className="remarksTables">{LINE_KEYS.map((line) => <section key={line}><h3>{lineName(line)}</h3><div className="tableCard resultTable"><table><thead><tr><th>호수</th><th>수도계량</th><th>사용량</th><th>수도요금</th><th>주차비</th><th>관리비</th><th>합계</th><th>비고</th></tr></thead><tbody>{calculations[line].rows.map((row) => <tr key={row.unit}><th>{row.unit}호</th><td>{money(numberValue(row.entry.current))}</td><td>{money(row.usage)}톤</td><td>{money(row.water)}원</td><td>{money(row.parking)}원</td><td>{money(row.management)}원</td><td><b>{money(row.total)}원</b></td><td><input className="remarkInput" value={data.remarks?.[row.unit] || ""} onChange={(event) => setData({ ...data, remarks: { ...(data.remarks || {}), [row.unit]: event.target.value } })} placeholder="비고 입력" /></td></tr>)}</tbody></table></div></section>)}</div><div className="nav"><button className="ghost" onClick={() => setStep("management")}>← 관리비</button><button className="primary" onClick={() => setStep("treasurer")}>총무용 표 확인 →</button></div></>}
 
-      {step === "treasurer" && <><div className="resultTitle"><h2>총무용 정산표</h2><p>라인별 합계가 포함된 내부 확인용 표입니다.</p></div><div className="resultActions"><button className="primary" onClick={downloadTreasurerBoth}>총무용 결과표 2장 저장</button></div><SheetCarousel>{LINE_KEYS.map((line) => <SettlementSheet key={line} settlement={data} line={line} rows={calculations[line].rows} treasurer />)}</SheetCarousel><div className="nav"><button className="ghost" onClick={() => setStep("remarks")}>← 비고 수정</button><button className="primary" onClick={finish}>주민용 최종 표 →</button></div></>}
+      {step === "treasurer" && <><div className="resultTitle"><h2>총무용 정산표</h2><p>라인별 합계가 포함된 내부 확인용 표입니다.</p></div><div className="resultActions"><button className="primary" onClick={downloadTreasurerBoth}>총무용 결과표 2장 저장</button></div><div className="sheetCarousel">{LINE_KEYS.map((line) => <SettlementSheet key={line} settlement={data} line={line} rows={calculations[line].rows} treasurer />)}</div><div className="nav"><button className="ghost" onClick={() => setStep("remarks")}>← 비고 수정</button><button className="primary" onClick={finish}>주민용 최종 표 →</button></div></>}
 
-      {step === "result" && <><div className="resultTitle"><h2>{data.year}년 {data.month}월 관리비 정산</h2><p>주민용 결과표 2장을 옆으로 넘겨 확인하세요.</p></div><div className="resultActions"><button className="ghost" onClick={openHistory}>정산 기록 보기</button><button className="primary" onClick={downloadBoth}>결과표 2장 모두 저장</button></div><SheetCarousel>{LINE_KEYS.map((line) => <SettlementSheet key={line} settlement={data} line={line} rows={calculations[line].rows} />)}</SheetCarousel><div className="nav"><button className="ghost" onClick={() => setStep("treasurer")}>← 총무용 표</button><button className="primary" onClick={goHome}>메인으로</button></div></>}
+      {step === "result" && <><div className="resultTitle"><h2>{data.year}년 {data.month}월 관리비 정산</h2><p>주민용 결과표 2장을 옆으로 넘겨 확인하세요.</p></div><div className="resultActions"><button className="ghost" onClick={openHistory}>정산 기록 보기</button><button className="primary" onClick={downloadBoth}>결과표 2장 모두 저장</button></div><div className="sheetCarousel">{LINE_KEYS.map((line) => <SettlementSheet key={line} settlement={data} line={line} rows={calculations[line].rows} />)}</div><div className="nav"><button className="ghost" onClick={() => setStep("treasurer")}>← 총무용 표</button><button className="primary" onClick={goHome}>메인으로</button></div></>}
     </section>}
 
     {existing && <div className="modalBackdrop"><div className="modal" role="dialog" aria-modal="true"><h2>작성 중인 정산이 있습니다</h2><p>{year}년 {month}월 저장 내용을 찾았습니다.</p><button className="primary full" onClick={() => begin("continue")}>이어서 작성하기</button><button className="dangerText" onClick={() => begin("reset")}>새로 작성하고 덮어쓰기</button><button className="close" onClick={() => setExisting(false)} aria-label="닫기">×</button></div></div>}
