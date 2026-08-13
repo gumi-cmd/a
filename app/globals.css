@@ -203,6 +203,14 @@ td input { max-width: 190px; padding: 10px 12px; text-align: right; }
 .rateFormula span { color: var(--muted); font-size: 15px; }
 .rateFormula b { text-align: right; }
 .rateFormula i { display: none; }
+.sharedRateCard { max-width: 620px; margin: 20px auto 0; }
+.combinedUsageCards { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 12px; }
+.combinedUsageCards > div { padding: 20px; border: 2px solid #777; border-radius: 7px; background: white; }
+.combinedUsageCards span, .combinedUsageCards strong { display: block; }
+.combinedUsageCards span { margin-bottom: 7px; color: var(--muted); font-size: 15px; }
+.combinedUsageCards strong { font-size: 24px; }
+.combinedUsageCards .combinedTotal { border-color: var(--green); background: #edf5f0; }
+.combinedUsageCards .combinedTotal strong { color: var(--green-dark); font-size: 28px; }
 .parkingPicker { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .parkingPicker fieldset { min-width: 0; margin: 0; padding: 20px; border: 2px solid #222; border-radius: 7px; background: white; }
 .parkingPicker legend { padding: 0 8px; font-size: 21px; font-weight: 900; }
@@ -298,6 +306,7 @@ td input { max-width: 190px; padding: 10px 12px; text-align: right; }
   .lineCards, .feeLayout, .summary { grid-template-columns: 1fr; }
   .parkingPicker { grid-template-columns: 1fr; }
   .rateCards { grid-template-columns: 1fr; }
+  .combinedUsageCards { grid-template-columns: 1fr; }
   .context, .sectionIntro, .historyHeading { align-items: flex-start; flex-direction: column; }
   .steps { gap: 7px; width: 100%; justify-content: space-between; }
   .steps span { font-size: 0; }

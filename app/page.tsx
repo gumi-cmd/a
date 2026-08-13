@@ -10,7 +10,8 @@ type Settlement = {
   month: number;
   units: Record<string, UnitEntry>;
   totalWaterBills: Record<LineKey, string>;
-  waterRates: Record<LineKey, string>;
+  waterRate: string;
+  waterRates?: Record<LineKey, string>;
   parkingFee: string;
   parkingUnits: Record<string, boolean>;
   managementFee: string;
@@ -60,6 +61,7 @@ function migrateLegacy(): Record<string, Settlement> {
         month: old.month,
         units: Object.fromEntries(ALL_UNITS.map((unit) => [unit, emptyEntry()])),
         totalWaterBills: { "12": "", "34": "" },
+        waterRate: "",
         waterRates: { "12": "", "34": "" },
         parkingFee: "10000",
         parkingUnits: {},
@@ -110,7 +112,7 @@ function blankSettlement(year: number, month: number): Settlement {
     month,
     units: Object.fromEntries(ALL_UNITS.map((unit) => [unit, { previous: previous?.units[unit]?.current || "", current: "" }])),
     totalWaterBills: { "12": "", "34": "" },
-    waterRates: { "12": "", "34": "" },
+    waterRate: "",
     parkingFee: previous?.parkingFee || "10000",
     parkingUnits: Object.fromEntries(ALL_UNITS.map((unit) => [unit, previous?.parkingUnits[unit] || false])),
     managementFee: previous?.managementFee || "20000",
@@ -126,8 +128,12 @@ function calculateLine(settlement: Settlement | null, line: LineKey) {
     return { unit, entry, usage: Math.max(0, numberValue(entry.current) - numberValue(entry.previous)) };
   });
   const totalUsage = raw.reduce((sum, row) => sum + row.usage, 0);
-  const totalBill = numberValue(settlement.totalWaterBills[line]);
-  const waterRate = numberValue(settlement.waterRates?.[line]) || (totalUsage > 0 ? totalBill / totalUsage : 0);
+  const combinedUsage = ALL_UNITS.reduce((sum, unit) => {
+    const entry = settlement.units[unit] || emptyEntry();
+    return sum + Math.max(0, numberValue(entry.current) - numberValue(entry.previous));
+  }, 0);
+  const combinedBill = LINE_KEYS.reduce((sum, key) => sum + numberValue(settlement.totalWaterBills[key]), 0);
+  const waterRate = numberValue(settlement.waterRate) || (combinedUsage > 0 ? combinedBill / combinedUsage : 0);
   const management = numberValue(settlement.managementFee);
   const parkingFee = numberValue(settlement.parkingFee);
   const rows = raw.map((row) => {
@@ -192,8 +198,12 @@ function makePng(settlement: Settlement, line: LineKey, rows: ResultRow[]) {
     });
   });
   const totalUsage = rows.reduce((sum, row) => sum + row.usage, 0);
-  const totalBill = numberValue(settlement.totalWaterBills[line]);
-  const appliedRate = numberValue(settlement.waterRates?.[line]) || (totalUsage ? totalBill / totalUsage : 0);
+  const combinedUsage = ALL_UNITS.reduce((sum, unit) => {
+    const entry = settlement.units[unit] || emptyEntry();
+    return sum + Math.max(0, numberValue(entry.current) - numberValue(entry.previous));
+  }, 0);
+  const combinedBill = LINE_KEYS.reduce((sum, key) => sum + numberValue(settlement.totalWaterBills[key]), 0);
+  const appliedRate = numberValue(settlement.waterRate) || (combinedUsage ? combinedBill / combinedUsage : 0);
   const footer = `${settlement.month}월 적용 수도요금 단가 ${money(appliedRate)}원/톤`;
   ctx.font = "900 78px Arial, sans-serif";
   ctx.fillText(footer, width / 2, 3210);
@@ -268,14 +278,11 @@ export default function Home() {
   const openWaterRate = () => {
     setData((current) => {
       if (!current) return current;
-      const nextRates = { ...(current.waterRates || { "12": "", "34": "" }) };
-      LINE_KEYS.forEach((line) => {
-        if (!nextRates[line]) {
-          const usage = calculateLine(current, line).totalUsage;
-          nextRates[line] = usage > 0 ? String(Math.round((numberValue(current.totalWaterBills[line]) / usage) * 100) / 100) : "0";
-        }
-      });
-      return { ...current, waterRates: nextRates };
+      if (current.waterRate) return current;
+      const totalUsage = LINE_KEYS.reduce((sum, line) => sum + calculateLine(current, line).totalUsage, 0);
+      const totalBill = LINE_KEYS.reduce((sum, line) => sum + numberValue(current.totalWaterBills[line]), 0);
+      const waterRate = totalUsage > 0 ? String(Math.round((totalBill / totalUsage) * 100) / 100) : "0";
+      return { ...current, waterRate };
     });
     setStep("waterRate");
   };
@@ -355,11 +362,7 @@ export default function Home() {
         <div className="nav"><button className="ghost" onClick={goHome}>이전</button><button className="primary" onClick={openWaterRate}>수도요금 단가 확인 →</button></div>
       </>}
 
-      {step === "waterRate" && <div className="focusedStep"><div className="sectionIntro"><div><span className="sectionNo">02</span><h2>톤당 수도요금 확인</h2></div><p>자동 계산된 단가를 확인하고 필요하면 수정하세요.</p></div><div className="rateCards">{LINE_KEYS.map((line) => {
-        const usage = calculations[line].totalUsage;
-        const automaticRate = usage > 0 ? numberValue(data.totalWaterBills[line]) / usage : 0;
-        return <section className="rateCard" key={line}><h3>{lineName(line)}</h3><div className="rateFormula"><span>총 수도요금</span><b>{money(numberValue(data.totalWaterBills[line]))}원</b><i>÷</i><span>총 사용량</span><b>{money(usage)}톤</b></div><p>자동 계산 단가 <strong>{money(automaticRate)}원/톤</strong></p><label><span>실제 적용할 1톤당 수도요금</span><span className="moneyInput large"><input inputMode="decimal" value={data.waterRates?.[line] || ""} onChange={(event) => setData({ ...data, waterRates: { ...(data.waterRates || { "12": "", "34": "" }), [line]: event.target.value } })} /><i>원</i></span></label><small>호수별 수도요금은 사용량 × 이 단가로 계산됩니다.</small></section>;
-      })}</div><div className="nav"><button className="ghost" onClick={() => setStep("water")}>← 수도 입력</button><button className="primary" onClick={() => setStep("parkingFee")}>주차비 설정으로 →</button></div></div>}
+      {step === "waterRate" && <div className="focusedStep"><div className="sectionIntro"><div><span className="sectionNo">02</span><h2>톤당 수도요금 확인</h2></div><p>두 라인을 합친 총사용량으로 공통 단가를 계산합니다.</p></div><div className="combinedUsageCards">{LINE_KEYS.map((line) => <div key={line}><span>{lineName(line)} 사용량</span><strong>{money(calculations[line].totalUsage)}톤</strong></div>)}<div className="combinedTotal"><span>두 라인 총사용량</span><strong>{money(calculations["12"].totalUsage + calculations["34"].totalUsage)}톤</strong></div></div><section className="rateCard sharedRateCard"><h3>전체 공통 수도요금 단가</h3><div className="rateFormula"><span>두 라인 총 수도요금</span><b>{money(numberValue(data.totalWaterBills["12"]) + numberValue(data.totalWaterBills["34"]))}원</b><i>÷</i><span>두 라인 총사용량</span><b>{money(calculations["12"].totalUsage + calculations["34"].totalUsage)}톤</b></div><p>자동 계산 단가 <strong>{money((calculations["12"].totalUsage + calculations["34"].totalUsage) > 0 ? (numberValue(data.totalWaterBills["12"]) + numberValue(data.totalWaterBills["34"])) / (calculations["12"].totalUsage + calculations["34"].totalUsage) : 0)}원/톤</strong></p><label><span>16세대에 적용할 1톤당 수도요금</span><span className="moneyInput large"><input inputMode="decimal" value={data.waterRate || ""} onChange={(event) => setData({ ...data, waterRate: event.target.value })} /><i>원</i></span></label><small>모든 호수의 수도요금은 사용량 × 이 공통 단가로 계산됩니다.</small></section><div className="nav"><button className="ghost" onClick={() => setStep("water")}>← 수도 입력</button><button className="primary" onClick={() => setStep("parkingFee")}>주차비 설정으로 →</button></div></div>}
 
       {step === "parkingFee" && <div className="focusedStep"><div className="sectionIntro"><div><span className="sectionNo">03</span><h2>주차비 금액 설정</h2></div></div><div className="singleSettingCard"><p>주차비를 내는 세대마다 적용할 금액입니다. 기본값은 10,000원이며 언제든 바꿀 수 있습니다.</p><label><span>세대당 주차비</span><span className="moneyInput large"><input autoFocus inputMode="numeric" value={data.parkingFee} onChange={(event) => setData({ ...data, parkingFee: event.target.value })} /><i>원</i></span></label></div><div className="nav"><button className="ghost" onClick={() => setStep("waterRate")}>← 수도요금 단가</button><button className="primary" onClick={() => setStep("parkingUnits")}>납부 호수 선택 →</button></div></div>}
 
