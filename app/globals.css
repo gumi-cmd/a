@@ -193,6 +193,16 @@ td input { max-width: 190px; padding: 10px 12px; text-align: right; }
 .singleSettingCard > p { color: var(--muted); line-height: 1.6; margin: 0 0 26px; }
 .singleSettingCard > small { display: block; margin: 26px 0 6px; color: var(--muted); }
 .singleSettingCard > strong { display: block; font-size: 28px; }
+.rateCards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.rateCard { padding: 28px; border: 2px solid #222; border-radius: 8px; background: white; }
+.rateCard h3 { margin: 0 0 20px; font-size: 24px; }
+.rateCard > p { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: var(--muted); }
+.rateCard > p strong { color: var(--green-dark); font-size: 22px; }
+.rateCard > small { display: block; margin-top: 14px; color: var(--muted); line-height: 1.5; }
+.rateFormula { display: grid; grid-template-columns: 1fr auto; gap: 7px 14px; align-items: center; }
+.rateFormula span { color: var(--muted); font-size: 15px; }
+.rateFormula b { text-align: right; }
+.rateFormula i { display: none; }
 .parkingPicker { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .parkingPicker fieldset { min-width: 0; margin: 0; padding: 20px; border: 2px solid #222; border-radius: 7px; background: white; }
 .parkingPicker legend { padding: 0 8px; font-size: 21px; font-weight: 900; }
@@ -287,6 +297,7 @@ td input { max-width: 190px; padding: 10px 12px; text-align: right; }
   body { font-size: 17px; }
   .lineCards, .feeLayout, .summary { grid-template-columns: 1fr; }
   .parkingPicker { grid-template-columns: 1fr; }
+  .rateCards { grid-template-columns: 1fr; }
   .context, .sectionIntro, .historyHeading { align-items: flex-start; flex-direction: column; }
   .steps { gap: 7px; width: 100%; justify-content: space-between; }
   .steps span { font-size: 0; }

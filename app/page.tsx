@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 
 type LineKey = "12" | "34";
-type Step = "home" | "water" | "parkingFee" | "parkingUnits" | "management" | "result" | "history";
+type Step = "home" | "water" | "waterRate" | "parkingFee" | "parkingUnits" | "management" | "result" | "history";
 type UnitEntry = { previous: string; current: string };
 type Settlement = {
   year: number;
   month: number;
   units: Record<string, UnitEntry>;
   totalWaterBills: Record<LineKey, string>;
+  waterRates: Record<LineKey, string>;
   parkingFee: string;
   parkingUnits: Record<string, boolean>;
   managementFee: string;
@@ -59,6 +60,7 @@ function migrateLegacy(): Record<string, Settlement> {
         month: old.month,
         units: Object.fromEntries(ALL_UNITS.map((unit) => [unit, emptyEntry()])),
         totalWaterBills: { "12": "", "34": "" },
+        waterRates: { "12": "", "34": "" },
         parkingFee: "10000",
         parkingUnits: {},
         managementFee: old.managementFee || "20000",
@@ -108,6 +110,7 @@ function blankSettlement(year: number, month: number): Settlement {
     month,
     units: Object.fromEntries(ALL_UNITS.map((unit) => [unit, { previous: previous?.units[unit]?.current || "", current: "" }])),
     totalWaterBills: { "12": "", "34": "" },
+    waterRates: { "12": "", "34": "" },
     parkingFee: previous?.parkingFee || "10000",
     parkingUnits: Object.fromEntries(ALL_UNITS.map((unit) => [unit, previous?.parkingUnits[unit] || false])),
     managementFee: previous?.managementFee || "20000",
@@ -124,16 +127,11 @@ function calculateLine(settlement: Settlement | null, line: LineKey) {
   });
   const totalUsage = raw.reduce((sum, row) => sum + row.usage, 0);
   const totalBill = numberValue(settlement.totalWaterBills[line]);
+  const waterRate = numberValue(settlement.waterRates?.[line]) || (totalUsage > 0 ? totalBill / totalUsage : 0);
   const management = numberValue(settlement.managementFee);
   const parkingFee = numberValue(settlement.parkingFee);
-  const positive = raw.filter((row) => row.usage > 0);
-  let assigned = 0;
   const rows = raw.map((row) => {
-    let water = 0;
-    if (totalUsage > 0 && row.usage > 0) {
-      water = positive.at(-1)?.unit === row.unit ? totalBill - assigned : Math.round((totalBill * row.usage) / totalUsage);
-      assigned += water;
-    }
+    const water = Math.round(row.usage * waterRate);
     const parking = settlement.parkingUnits[row.unit] ? parkingFee : 0;
     return { ...row, water, parking, management, total: water + parking + management };
   });
@@ -195,7 +193,8 @@ function makePng(settlement: Settlement, line: LineKey, rows: ResultRow[]) {
   });
   const totalUsage = rows.reduce((sum, row) => sum + row.usage, 0);
   const totalBill = numberValue(settlement.totalWaterBills[line]);
-  const footer = `${settlement.month}월 수도요금 ${money(totalBill)}원 ÷ ${money(totalUsage)}톤 = ${money(totalUsage ? totalBill / totalUsage : 0)}원`;
+  const appliedRate = numberValue(settlement.waterRates?.[line]) || (totalUsage ? totalBill / totalUsage : 0);
+  const footer = `${settlement.month}월 적용 수도요금 단가 ${money(appliedRate)}원/톤`;
   ctx.font = "900 78px Arial, sans-serif";
   ctx.fillText(footer, width / 2, 3210);
   ctx.fillText("새마을금고 9002205515741 최영옥", width / 2, 3340);
@@ -240,7 +239,7 @@ export default function Home() {
   const completedRecords = useMemo(() => Object.entries(history).filter(([, record]) => record.completed).sort(([, a], [, b]) => b.year - a.year || b.month - a.month), [history]);
   const historyYears = useMemo(() => Array.from(new Set(completedRecords.map(([, record]) => record.year))).sort((a, b) => b - a), [completedRecords]);
   const visibleRecords = completedRecords.filter(([, record]) => historyYear === null || record.year === historyYear);
-  const activeIndex = ["water", "parkingFee", "parkingUnits", "management", "result"].indexOf(step);
+  const activeIndex = ["water", "waterRate", "parkingFee", "parkingUnits", "management", "result"].indexOf(step);
 
   const startSettlement = () => {
     const found = readAll()[settlementKey(year, month)];
@@ -266,6 +265,20 @@ export default function Home() {
     setStep("history");
   };
   const finish = () => { setData((current) => current ? { ...current, completed: true } : current); setStep("result"); };
+  const openWaterRate = () => {
+    setData((current) => {
+      if (!current) return current;
+      const nextRates = { ...(current.waterRates || { "12": "", "34": "" }) };
+      LINE_KEYS.forEach((line) => {
+        if (!nextRates[line]) {
+          const usage = calculateLine(current, line).totalUsage;
+          nextRates[line] = usage > 0 ? String(Math.round((numberValue(current.totalWaterBills[line]) / usage) * 100) / 100) : "0";
+        }
+      });
+      return { ...current, waterRates: nextRates };
+    });
+    setStep("waterRate");
+  };
   const saveRecordDate = () => {
     if (!recordEdit) return;
     const nextKey = settlementKey(recordEdit.year, recordEdit.month);
@@ -329,7 +342,7 @@ export default function Home() {
     </section>}
 
     {step !== "home" && step !== "history" && data && <section className="workspace">
-      {step !== "result" && <div className="context"><div><span className="eyebrow">전체 16세대</span><h1>{data.year}년 {data.month}월 관리비 정산</h1></div><div className="steps">{["수도", "주차비", "주차 호수", "관리비", "결과"].map((label, index) => <span key={label} className={index <= activeIndex ? "active" : ""}><i>{index + 1}</i>{label}</span>)}</div></div>}
+      {step !== "result" && <div className="context"><div><span className="eyebrow">전체 16세대</span><h1>{data.year}년 {data.month}월 관리비 정산</h1></div><div className="steps">{["수도", "수도 단가", "주차비", "주차 호수", "관리비", "결과"].map((label, index) => <span key={label} className={index <= activeIndex ? "active" : ""}><i>{index + 1}</i>{label}</span>)}</div></div>}
 
       {step === "water" && <>
         <div className="sectionIntro"><div><span className="sectionNo">01</span><h2>전체 수도 계량값 입력</h2></div><p>두 라인 16세대를 한 번에 입력합니다.</p></div>
@@ -339,10 +352,16 @@ export default function Home() {
           const invalid = entry.current !== "" && numberValue(entry.current) < numberValue(entry.previous);
           return <tr key={unit}><th>{unit}호</th><td><input inputMode="decimal" value={entry.previous} onChange={(event) => updateUnit(unit, "previous", event.target.value)} placeholder="0" /></td><td><input className={invalid ? "invalid" : ""} inputMode="decimal" value={entry.current} onChange={(event) => updateUnit(unit, "current", event.target.value)} placeholder="입력" /></td><td><b>{entry.current ? `${money(usage)}톤` : "—"}</b></td></tr>;
         })}</tbody></table></div><div className="totalInput"><div><span>{lineName(line)} 전체 사용량</span><strong>{money(calculations[line].totalUsage)}톤</strong></div><label><span>{lineName(line)} 총 수도요금</span><span className="moneyInput"><input inputMode="numeric" value={data.totalWaterBills[line]} onChange={(event) => setData({ ...data, totalWaterBills: { ...data.totalWaterBills, [line]: event.target.value } })} placeholder="0" /><i>원</i></span></label></div></div>)}
-        <div className="nav"><button className="ghost" onClick={goHome}>이전</button><button className="primary" onClick={() => setStep("parkingFee")}>주차비 설정으로 →</button></div>
+        <div className="nav"><button className="ghost" onClick={goHome}>이전</button><button className="primary" onClick={openWaterRate}>수도요금 단가 확인 →</button></div>
       </>}
 
-      {step === "parkingFee" && <div className="focusedStep"><div className="sectionIntro"><div><span className="sectionNo">02</span><h2>주차비 금액 설정</h2></div></div><div className="singleSettingCard"><p>주차비를 내는 세대마다 적용할 금액입니다. 기본값은 10,000원이며 언제든 바꿀 수 있습니다.</p><label><span>세대당 주차비</span><span className="moneyInput large"><input autoFocus inputMode="numeric" value={data.parkingFee} onChange={(event) => setData({ ...data, parkingFee: event.target.value })} /><i>원</i></span></label></div><div className="nav"><button className="ghost" onClick={() => setStep("water")}>← 수도 입력</button><button className="primary" onClick={() => setStep("parkingUnits")}>납부 호수 선택 →</button></div></div>}
+      {step === "waterRate" && <div className="focusedStep"><div className="sectionIntro"><div><span className="sectionNo">02</span><h2>톤당 수도요금 확인</h2></div><p>자동 계산된 단가를 확인하고 필요하면 수정하세요.</p></div><div className="rateCards">{LINE_KEYS.map((line) => {
+        const usage = calculations[line].totalUsage;
+        const automaticRate = usage > 0 ? numberValue(data.totalWaterBills[line]) / usage : 0;
+        return <section className="rateCard" key={line}><h3>{lineName(line)}</h3><div className="rateFormula"><span>총 수도요금</span><b>{money(numberValue(data.totalWaterBills[line]))}원</b><i>÷</i><span>총 사용량</span><b>{money(usage)}톤</b></div><p>자동 계산 단가 <strong>{money(automaticRate)}원/톤</strong></p><label><span>실제 적용할 1톤당 수도요금</span><span className="moneyInput large"><input inputMode="decimal" value={data.waterRates?.[line] || ""} onChange={(event) => setData({ ...data, waterRates: { ...(data.waterRates || { "12": "", "34": "" }), [line]: event.target.value } })} /><i>원</i></span></label><small>호수별 수도요금은 사용량 × 이 단가로 계산됩니다.</small></section>;
+      })}</div><div className="nav"><button className="ghost" onClick={() => setStep("water")}>← 수도 입력</button><button className="primary" onClick={() => setStep("parkingFee")}>주차비 설정으로 →</button></div></div>}
+
+      {step === "parkingFee" && <div className="focusedStep"><div className="sectionIntro"><div><span className="sectionNo">03</span><h2>주차비 금액 설정</h2></div></div><div className="singleSettingCard"><p>주차비를 내는 세대마다 적용할 금액입니다. 기본값은 10,000원이며 언제든 바꿀 수 있습니다.</p><label><span>세대당 주차비</span><span className="moneyInput large"><input autoFocus inputMode="numeric" value={data.parkingFee} onChange={(event) => setData({ ...data, parkingFee: event.target.value })} /><i>원</i></span></label></div><div className="nav"><button className="ghost" onClick={() => setStep("waterRate")}>← 수도요금 단가</button><button className="primary" onClick={() => setStep("parkingUnits")}>납부 호수 선택 →</button></div></div>}
 
       {step === "parkingUnits" && <div className="focusedStep"><div className="sectionIntro"><div><span className="sectionNo">03</span><h2>주차비 납부 호수 선택</h2></div><p>체크 상태는 다음 달 정산에도 그대로 이어집니다.</p></div><div className="parkingPicker">{LINE_KEYS.map((line) => <fieldset key={line}><legend>{lineName(line)}</legend><div className="unitChecks">{LINES[line].map((unit) => <label key={unit} className={data.parkingUnits[unit] ? "checked" : ""}><input type="checkbox" checked={data.parkingUnits[unit] || false} onChange={(event) => setData({ ...data, parkingUnits: { ...data.parkingUnits, [unit]: event.target.checked } })} /><span>{unit}호</span><small>{data.parkingUnits[unit] ? `${money(numberValue(data.parkingFee))}원` : "미납부"}</small></label>)}</div></fieldset>)}</div><p className="selectionSummary">총 <b>{ALL_UNITS.filter((unit) => data.parkingUnits[unit]).length}세대</b> · 주차비 합계 <b>{money(ALL_UNITS.filter((unit) => data.parkingUnits[unit]).length * numberValue(data.parkingFee))}원</b></p><div className="nav"><button className="ghost" onClick={() => setStep("parkingFee")}>← 주차비 금액</button><button className="primary" onClick={() => setStep("management")}>관리비 설정 →</button></div></div>}
 
