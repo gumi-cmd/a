@@ -400,8 +400,13 @@ export default function Home() {
           const usage = Math.max(0, numberValue(entry.current) - numberValue(entry.previous));
           const invalid = entry.current !== "" && numberValue(entry.current) < numberValue(entry.previous);
           return <tr key={unit}><th>{unit}호</th><td><input inputMode="decimal" value={entry.previous} onChange={(event) => updateUnit(unit, "previous", event.target.value)} placeholder="0" /></td><td><input className={invalid ? "invalid" : ""} inputMode="decimal" value={entry.current} onChange={(event) => updateUnit(unit, "current", event.target.value)} placeholder="입력" /></td><td><b>{entry.current ? `${money(usage)}톤` : "—"}</b></td></tr>;
-        })}</tbody></table></div><div className="totalInput"><div><span>{lineName(line)} 전체 사용량</span><strong>{money(calculations[line].totalUsage)}톤</strong></div></div></div>)}
-        <div className="totalInput combinedBillInput"><div><span>두 라인 총사용량</span><strong>{money(calculations["12"].totalUsage + calculations["34"].totalUsage)}톤</strong></div><label><span>전체 총수도요금</span><span className="moneyInput"><input inputMode="numeric" value={data.totalWaterBill || ""} onChange={(event) => setData({ ...data, totalWaterBill: event.target.value, waterRate: "" })} placeholder="0" /><i>원</i></span></label></div>
+        })}</tbody></table></div></div>)}
+        <div className="usageTotals">
+          <div><span>1·2호 라인 전체 사용량</span><strong>{money(calculations["12"].totalUsage)}톤</strong></div>
+          <div><span>3·4호 라인 전체 사용량</span><strong>{money(calculations["34"].totalUsage)}톤</strong></div>
+          <div className="allLinesUsage"><span>두 라인 총사용량</span><strong>{money(calculations["12"].totalUsage + calculations["34"].totalUsage)}톤</strong></div>
+        </div>
+        <div className="totalInput combinedBillInput"><label><span>전체 총수도요금</span><span className="moneyInput"><input inputMode="numeric" value={data.totalWaterBill || ""} onChange={(event) => setData({ ...data, totalWaterBill: event.target.value, waterRate: "" })} placeholder="0" /><i>원</i></span></label></div>
         <div className="nav"><button className="ghost" onClick={goHome}>이전</button><button className="primary" onClick={openWaterRate}>수도요금 단가 확인 →</button></div>
       </>}
 
