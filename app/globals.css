@@ -131,7 +131,7 @@ input.invalid { border-color: #c13f3f; }
 .sectionIntro { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; }
 .sectionIntro > div { display: flex; align-items: center; gap: 11px; }
 .sectionIntro h2 { margin: 0; font-size: 29px; }
-.sectionNo { color: var(--green); font-size: 21px; font-weight: 900; }
+.sectionNo { color: var(--green); font-size: 29px; font-weight: 900; }
 .sectionIntro p { color: var(--muted); font-size: 16px; margin: 0; }
 
 .tableCard { background: white; border: 3px solid #111; border-radius: 4px; overflow: hidden; }
@@ -152,10 +152,10 @@ td input { max-width: 190px; padding: 10px 12px; text-align: right; }
 .lineInputGroup + .lineInputGroup { border-top: 0; padding-top: 0; margin-top: 120px; }
 .lineInputGroup > h3 { margin: 0 0 20px; font-size: 34px; font-weight: 950; }
 .usageTotals { display: grid; gap: 10px; margin: 4px 0 16px; }
-.usageTotals > div { display: flex; align-items: center; justify-content: space-between; gap: 20px; border: 2px solid #777; background: white; padding: 17px 20px; }
-.usageTotals span { color: var(--muted); font-size: 16px; font-weight: 750; }
+.usageTotals > div { display: flex; align-items: center; justify-content: space-between; gap: 20px; border: 2px solid var(--green); background: #e8f5eb; padding: 17px 20px; }
+.usageTotals span { color: var(--green-dark); font-size: 16px; font-weight: 850; }
 .usageTotals strong { font-size: 27px; }
-.usageTotals .allLinesUsage { border: 3px solid var(--green); }
+.usageTotals .allLinesUsage { border: 3px solid var(--green-dark); background: #d8eddd; }
 
 .totalInput {
   margin-top: 18px;
