@@ -117,6 +117,7 @@ input.invalid { border-color: #c13f3f; }
 .lineCard small { color: var(--muted); font-size: 14px; line-height: 1.45; }
 .arrow { margin-left: auto; color: var(--green); font-size: 25px; }
 .privacy { margin-top: 24px; color: var(--muted); font-size: 15px; }
+.startButton { width: min(620px, 100%); margin-top: 18px; padding: 18px 24px; font-size: 20px; }
 
 .workspace, .historyPage { max-width: 1240px; margin: auto; padding: 42px 22px 80px; }
 .context { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 38px; }
@@ -147,6 +148,8 @@ thead th { background: white; color: #111; font-size: 18px; font-weight: 900; bo
 tbody th { background: white; color: #111; font-weight: 900; }
 td input { max-width: 190px; padding: 10px 12px; text-align: right; }
 .inputTable th, .inputTable td { font-size: 19px; }
+.lineInputGroup { margin-bottom: 38px; }
+.lineInputGroup > h3 { margin: 0 0 12px; font-size: 24px; }
 
 .totalInput {
   margin-top: 18px;
@@ -185,10 +188,28 @@ td input { max-width: 190px; padding: 10px 12px; text-align: right; }
 .moneyInput.large input { font-size: 24px; padding: 16px 44px 16px 12px; }
 .managementCard > small { display: block; color: var(--muted); font-size: 15px; margin: 24px 0 6px; }
 .managementCard > strong { font-size: 24px; }
+.focusedStep { max-width: 960px; margin: 0 auto; }
+.singleSettingCard { max-width: 620px; margin: 28px auto 0; padding: 34px; border: 2px solid #222; border-radius: 8px; background: white; }
+.singleSettingCard > p { color: var(--muted); line-height: 1.6; margin: 0 0 26px; }
+.singleSettingCard > small { display: block; margin: 26px 0 6px; color: var(--muted); }
+.singleSettingCard > strong { display: block; font-size: 28px; }
+.parkingPicker { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.parkingPicker fieldset { min-width: 0; margin: 0; padding: 20px; border: 2px solid #222; border-radius: 7px; background: white; }
+.parkingPicker legend { padding: 0 8px; font-size: 21px; font-weight: 900; }
+.unitChecks { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.unitChecks label { display: flex; align-items: center; gap: 9px; border: 2px solid #aaa; border-radius: 6px; padding: 13px; cursor: pointer; background: white; }
+.unitChecks label.checked { border-color: var(--green); background: #edf5f0; }
+.unitChecks input { width: 21px; height: 21px; margin: 0; accent-color: var(--green); }
+.unitChecks span { font-weight: 900; }
+.unitChecks small { margin-left: auto; color: var(--muted); font-size: 13px; }
+.selectionSummary { padding: 18px; border: 2px solid #222; border-radius: 6px; background: white; text-align: center; }
 
 .resultTitle { text-align: center; margin: 8px 0 30px; }
 .resultTitle h2 { font-size: clamp(42px, 6vw, 62px); font-weight: 950; margin: 0 0 10px; color: #000; }
 .resultTitle p { color: #111; font-size: 25px; font-weight: 800; margin: 0; }
+.lineResult { margin-top: 38px; }
+.lineResultHeading { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+.lineResultHeading h3 { margin: 0; font-size: 29px; }
 .resultTable { overflow-x: auto; }
 .resultTable { border: 5px solid #000; }
 .resultTable table { min-width: 1100px; }
@@ -234,11 +255,17 @@ td input { max-width: 190px; padding: 10px 12px; text-align: right; }
 .fileGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding: 24px; }
 .recordFile { border: 2px solid #999; border-radius: 5px; background: white; padding: 14px; text-align: left; }
 .recordFile:hover { border-color: var(--green); }
+.recordOpen { display: block; width: 100%; border: 0; padding: 0; background: transparent; color: inherit; text-align: left; }
 .filePreview { height: 120px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 12px; border: 2px solid #222; background: white; margin-bottom: 13px; }
 .filePreview i { border: 1px solid #222; }
 .recordFile b, .recordFile small { display: block; }
 .recordFile b { font-size: 19px; margin-bottom: 5px; }
 .recordFile small { color: var(--muted); font-size: 15px; }
+.recordActions { display: flex; gap: 8px; padding-top: 13px; margin-top: 13px; border-top: 1px solid var(--line); }
+.recordActions button { flex: 1; border: 1px solid #777; border-radius: 4px; background: white; padding: 8px 6px; color: #333; font-size: 14px; font-weight: 800; }
+.recordActions button:hover { border-color: var(--green); color: var(--green); }
+.recordActions button.deleteRecord { border-color: #c98682; color: #a33d38; }
+.recordActions button.deleteRecord:hover { background: #fff3f2; border-color: #a33d38; }
 .emptyHistory { padding: 70px 30px; border: 2px solid #222; background: white; text-align: center; }
 .emptyHistory b { font-size: 24px; }
 .emptyHistory p { color: var(--muted); }
@@ -250,10 +277,16 @@ td input { max-width: 190px; padding: 10px 12px; text-align: right; }
 .full { display: block; width: 100%; margin-top: 22px; }
 .dangerText { border: 0; background: none; color: #a33d38; margin-top: 16px; font-size: 16px; text-decoration: underline; }
 .close { position: absolute; top: 10px; right: 14px; border: 0; background: none; font-size: 27px; color: #555; }
+.editRecordModal { text-align: left; }
+.editRecordModal > p { margin-bottom: 22px; }
+.editDateFields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modalActions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+.primary:disabled { opacity: .45; cursor: not-allowed; }
 
 @media (max-width: 820px) {
   body { font-size: 17px; }
   .lineCards, .feeLayout, .summary { grid-template-columns: 1fr; }
+  .parkingPicker { grid-template-columns: 1fr; }
   .context, .sectionIntro, .historyHeading { align-items: flex-start; flex-direction: column; }
   .steps { gap: 7px; width: 100%; justify-content: space-between; }
   .steps span { font-size: 0; }
@@ -285,4 +318,8 @@ td input { max-width: 190px; padding: 10px 12px; text-align: right; }
   .fileGrid { grid-template-columns: 1fr; }
   .resultActions { flex-direction: column; }
   .resultActions button { width: 100%; }
+  .editDateFields { grid-template-columns: 1fr; }
+  .unitChecks { grid-template-columns: 1fr; }
+  .singleSettingCard { padding: 24px 20px; }
+  .lineResultHeading { align-items: stretch; flex-direction: column; }
 }
